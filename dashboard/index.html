@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Hallucination Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-6 text-center">🔍 AI Hallucination Checker</h1>
+        <textarea id="question" class="w-full h-32 p-4 bg-gray-800 border border-gray-700 rounded mb-4"
+            placeholder="Enter the question..."></textarea>
+        <textarea id="ai_answer" class="w-full h-32 p-4 bg-gray-800 border border-gray-700 rounded mb-4"
+            placeholder="Paste AI answer to check (optional)..."></textarea>
+        <button onclick="check()"
+            class="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded font-bold w-full">CHECK</button>
+
+        <div id="result" class="mt-8 p-6 bg-gray-800 rounded hidden"></div>
+    </div>
+
+    <script>
+        const API_URL = "https://zt8q48zyta.execute-api.us-east-1.amazonaws.com/prod/check"; // ← replace after next deploy
+
+        async function check() {
+            const question = document.getElementById("question").value.trim();
+            const aiAnswer = document.getElementById("ai_answer").value.trim();
+            if (!question) return alert("Enter a question");
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question, ai_answer: aiAnswer })
+                });
+                const data = await res.json();
+
+                const div = document.getElementById("result");
+                div.classList.remove("hidden");
+                const color = data.hallucination_score > 70 ? '🔴' : data.hallucination_score > 40 ? '🟠' : '🟢';
+                div.innerHTML = `
+        <div class="text-6xl mb-4 text-center">${color}</div>
+        <p><strong>Score:</strong> ${data.hallucination_score}/100</p>
+        <p><strong>Explanation:</strong> ${data.explanation || 'N/A'}</p>
+        <p><strong>Verified Answer:</strong> ${data.verified_answer || 'N/A'}</p>
+      `;
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
